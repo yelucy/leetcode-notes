@@ -1,3 +1,48 @@
+######## 534. Game Play Analysis III ######## {MEDIUM} 
+
+-- Write an SQL query that reports for each player and date, how many games played so far by the player. 
+-- That is, the total number of games played by the player until that date. Check the example for clarity.
+
+-- Activity table:
+-- +-----------+-----------+------------+--------------+
+-- | player_id | device_id | event_date | games_played |
+-- +-----------+-----------+------------+--------------+
+-- | 1         | 2         | 2016-03-01 | 5            |
+-- | 1         | 2         | 2016-05-02 | 6            |
+-- | 1         | 3         | 2017-06-25 | 1            |
+-- | 3         | 1         | 2016-03-02 | 0            |
+-- | 3         | 4         | 2018-07-03 | 5            |
+-- +-----------+-----------+------------+--------------+
+
+-- Result table:
+-- +-----------+------------+---------------------+
+-- | player_id | event_date | games_played_so_far |
+-- +-----------+------------+---------------------+
+-- | 1         | 2016-03-01 | 5                   |
+-- | 1         | 2016-05-02 | 11                  |
+-- | 1         | 2017-06-25 | 12                  |
+-- | 3         | 2016-03-02 | 0                   |
+-- | 3         | 2018-07-03 | 5                   |
+-- +-----------+------------+---------------------+
+
+# Schema: 
+drop table if exists Activity; 
+Create table If Not Exists Activity (player_id int, device_id int, event_date date, games_played int);
+insert into Activity (player_id, device_id, event_date, games_played) values ('1', '2', '2016-03-01', '5');
+insert into Activity (player_id, device_id, event_date, games_played) values ('1', '2', '2016-05-02', '6');
+insert into Activity (player_id, device_id, event_date, games_played) values ('1', '3', '2017-06-25', '1');
+insert into Activity (player_id, device_id, event_date, games_played) values ('3', '1', '2016-03-02', '0');
+insert into Activity (player_id, device_id, event_date, games_played) values ('3', '4', '2018-07-03', '5');
+select * from Activity; 
+
+# Solution: 
+select a.player_id, a.event_date, sum(b.games_played) as games_played_so_far 
+from Activity a inner join Activity b on a.event_date >= b.event_date 
+and a.player_id = b.player_id 
+group by 1,2 
+order by 1,2; 
+
+
 ######## 577. Employee Bonus ######## [EASY]
 
 -- Select all employee's name and bonus whose bonus is < 1000. 
@@ -188,6 +233,37 @@ having sum(case when p.product_name = 'S8' then 1 else 0 end) > 0
 and sum(case when p.product_name = 'iPhone' then 1 else 0 end) = 0; 
 
 
+######## 1126. Active Businesses ######## {MEDIUM} 
+
+Write an SQL query to find all active businesses.
+
+-- An active business is a business that has 
+-- more than one event type with occurences greater than the average occurences of that event type among all businesses.
+
+# Schema: 
+drop table if exists Events; 
+Create table If Not Exists Events (business_id int, event_type varchar(10), occurences int);
+insert into Events (business_id, event_type, occurences) values ('1', 'reviews', '7');
+insert into Events (business_id, event_type, occurences) values ('3', 'reviews', '3');
+insert into Events (business_id, event_type, occurences) values ('1', 'ads', '11');
+insert into Events (business_id, event_type, occurences) values ('2', 'ads', '7');
+insert into Events (business_id, event_type, occurences) values ('3', 'ads', '6');
+insert into Events (business_id, event_type, occurences) values ('1', 'page views', '3');
+insert into Events (business_id, event_type, occurences) values ('2', 'page views', '12');
+select * from Events; 
+
+# Solution:
+select business_id 
+from Events a join 
+(select event_type, avg(occurences) as avg_occur 
+from Events 
+group by 1) b 
+on a.event_type = b.event_type 
+where a.occurences > b.avg_occur 
+group by 1 
+having count(a.event_type) > 1;
+
+
 ######## 1113. Reported Posts ######## [EASY]
 
 -- Write an SQL query that reports the number of posts reported yesterday for each report reason. Assume today is 2019-07-05. 
@@ -252,6 +328,47 @@ on a.product_id = b.product_id and b.xrank = 1
 order by 2 desc; 
 
 
+######## 1212. Team Scores in Football Tournament ######## {MEDIUM} 
+
+-- You would like to compute the scores of all teams after all matches. Points are awarded as follows:
+-- A team receives three points if they win a match (Score strictly more goals than the opponent team).
+-- A team receives one point if they draw a match (Same number of goals as the opponent team).
+-- A team receives no points if they lose a match (Score less goals than the opponent team).
+
+-- Write an SQL query that selects the team_id, team_name and num_points of each team in the tournament after all described matches. 
+-- Result table should be ordered by num_points (decreasing order). In case of a tie, order the records by team_id (increasing order).
+
+# Schema: 
+drop table if exists Teams; 
+drop table if exists Matches; 
+Create table If Not Exists Teams (team_id int, team_name varchar(30));
+Create table If Not Exists Matches (match_id int, host_team int, guest_team int, host_goals int, guest_goals int);
+insert into Teams (team_id, team_name) values ('10', 'Leetcode FC');
+insert into Teams (team_id, team_name) values ('20', 'NewYork FC');
+insert into Teams (team_id, team_name) values ('30', 'Atlanta FC');
+insert into Teams (team_id, team_name) values ('40', 'Chicago FC');
+insert into Teams (team_id, team_name) values ('50', 'Toronto FC');
+insert into Matches (match_id, host_team, guest_team, host_goals, guest_goals) values ('1', '10', '20', '3', '0');
+insert into Matches (match_id, host_team, guest_team, host_goals, guest_goals) values ('2', '30', '10', '2', '2');
+insert into Matches (match_id, host_team, guest_team, host_goals, guest_goals) values ('3', '10', '50', '5', '1');
+insert into Matches (match_id, host_team, guest_team, host_goals, guest_goals) values ('4', '20', '30', '1', '0');
+insert into Matches (match_id, host_team, guest_team, host_goals, guest_goals) values ('5', '50', '30', '1', '0');
+select * from Teams;
+select * from Matches; 
+
+# Solution: 
+select team_id, team_name, 
+coalesce(sum(case when team_id=host_team and host_goals>guest_goals then 3 
+when team_id = guest_team and guest_goals>host_goals then 3 
+when team_id = host_team and host_goals<guest_goals then 0 
+when team_id = guest_team and guest_goals<host_goals then 0 
+when guest_goals = host_goals then 1 
+end),0) as num_points 
+from Teams left join Matches on team_id=host_team OR team_id=guest_team 
+group by 1,2 
+order by 3 desc, team_id; 
+
+
 ######## 1270. All People Report to the Given Manager ######## {MEDIUM} 
 
 -- Write an SQL query to find employee_id of all employees that directly or indirectly report their work to the head of the company.
@@ -277,6 +394,43 @@ on e1.manager_id = e2.employee_id
 join employees e3 
 on e2.manager_id = e3.employee_id
 where e3.manager_id = 1 AND e1.employee_id != 1;
+
+
+######## 1285. Find the Start and End Number of Continuous Ranges ######## {MEDIUM} 
+
+-- Since some IDs have been removed from Logs. Write an SQL query to find the start and end number of continuous ranges in table Logs.
+-- Order the result table by start_id.
+
+-- Result table:
+-- +------------+--------------+
+-- | start_id   | end_id       |
+-- +------------+--------------+
+-- | 1          | 3            |
+-- | 7          | 8            |
+-- | 10         | 10           |
+-- +------------+--------------+
+
+# Schema: 
+drop table if exists Logs; 
+Create table If Not Exists Logs (log_id int); 
+insert into Logs (log_id) values ('1');
+insert into Logs (log_id) values ('2');
+insert into Logs (log_id) values ('3');
+insert into Logs (log_id) values ('7');
+insert into Logs (log_id) values ('8');
+insert into Logs (log_id) values ('10');
+select * from Logs; 
+
+# Solution: 
+SELECT min(log_id) as start_id, max(log_id) as end_id 
+FROM
+(SELECT log_id, ROW_NUMBER() OVER(ORDER BY log_id) as num
+FROM Logs) a
+GROUP BY log_id - num;
+
+SELECT log_id, ROW_NUMBER() OVER(ORDER BY log_id) as num
+FROM Logs;
+
 
 
 ######## 1511. Customer Order Frequency ######## [EASY]
