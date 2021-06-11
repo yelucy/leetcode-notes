@@ -167,6 +167,65 @@ from tree
 order by 1; 
 
 
+######## 1077. Project Employees III ######## {MEDIUM} 
+
+-- Write an SQL query that reports the most experienced employees in each project. 
+-- In case of a tie, report all employees with the maximum number of experience years.
+
+# Schema: 
+drop table if exists Project; 
+drop table if exists Employee; 
+Create table If Not Exists Project (project_id int, employee_id int);
+Create table If Not Exists Employee (employee_id int, name varchar(10), experience_years int);
+insert into Project (project_id, employee_id) values ('1', '1');
+insert into Project (project_id, employee_id) values ('1', '2');
+insert into Project (project_id, employee_id) values ('1', '3');
+insert into Project (project_id, employee_id) values ('2', '1');
+insert into Project (project_id, employee_id) values ('2', '4');
+insert into Employee (employee_id, name, experience_years) values ('1', 'Khaled', '3');
+insert into Employee (employee_id, name, experience_years) values ('2', 'Ali', '2');
+insert into Employee (employee_id, name, experience_years) values ('3', 'John', '3');
+insert into Employee (employee_id, name, experience_years) values ('4', 'Doe', '2');
+select * from Project;
+select * from Employee; 
+
+# Solution: 
+select z.project_id, z.employee_id from 
+(
+select p.project_id, p.employee_id, rank() over (partition by project_id order by experience_years desc) as xrank 
+from Project p left join Employee e on p.employee_id = e.employee_id) z 
+where z.xrank = 1;
+
+
+######## 1083. Sales Analysis II ######## [EASY]
+
+-- Write an SQL query that reports the buyers who have bought S8 but not iPhone. 
+-- Note that S8 and iPhone are products present in the Product table.
+
+# Schema: 
+drop table if exists Product;
+drop table if exists Sales; 
+Create table If Not Exists Product (product_id int, product_name varchar(10), unit_price int);
+Create table If Not Exists Sales (seller_id int, product_id int, buyer_id int, sale_date date, quantity int, price int);
+insert into Product (product_id, product_name, unit_price) values ('1', 'S8', '1000');
+insert into Product (product_id, product_name, unit_price) values ('2', 'G4', '800');
+insert into Product (product_id, product_name, unit_price) values ('3', 'iPhone', '1400');
+insert into Sales (seller_id, product_id, buyer_id, sale_date, quantity, price) values ('1', '1', '1', '2019-01-21', '2', '2000');
+insert into Sales (seller_id, product_id, buyer_id, sale_date, quantity, price) values ('1', '2', '2', '2019-02-17', '1', '800');
+insert into Sales (seller_id, product_id, buyer_id, sale_date, quantity, price) values ('2', '1', '3', '2019-06-02', '1', '800');
+insert into Sales (seller_id, product_id, buyer_id, sale_date, quantity, price) values ('3', '3', '3', '2019-05-13', '2', '2800');
+select * from Product;
+select * from Sales; 
+
+# Solution:
+select s.buyer_id 
+from Sales s 
+inner join Product p on s.product_id = p.product_id 
+group by 1 
+having sum(case when p.product_name = 'S8' then 1 else 0 end) > 0 
+and sum(case when p.product_name = 'iPhone' then 1 else 0 end) = 0; 
+
+
 ######## 1112. Highest Grade For Each Student ######## {MEDIUM} 
 
 -- Write a SQL query to find the highest grade with its corresponding course for each student. 
@@ -202,35 +261,6 @@ rank() over (partition by student_id order by grade desc, course_id) as xrank
 from Enrollments) z 
 where xrank = 1 
 order by 1; 
-
-
-######## 1083. Sales Analysis II ######## [EASY]
-
--- Write an SQL query that reports the buyers who have bought S8 but not iPhone. 
--- Note that S8 and iPhone are products present in the Product table.
-
-# Schema: 
-drop table if exists Product;
-drop table if exists Sales; 
-Create table If Not Exists Product (product_id int, product_name varchar(10), unit_price int);
-Create table If Not Exists Sales (seller_id int, product_id int, buyer_id int, sale_date date, quantity int, price int);
-insert into Product (product_id, product_name, unit_price) values ('1', 'S8', '1000');
-insert into Product (product_id, product_name, unit_price) values ('2', 'G4', '800');
-insert into Product (product_id, product_name, unit_price) values ('3', 'iPhone', '1400');
-insert into Sales (seller_id, product_id, buyer_id, sale_date, quantity, price) values ('1', '1', '1', '2019-01-21', '2', '2000');
-insert into Sales (seller_id, product_id, buyer_id, sale_date, quantity, price) values ('1', '2', '2', '2019-02-17', '1', '800');
-insert into Sales (seller_id, product_id, buyer_id, sale_date, quantity, price) values ('2', '1', '3', '2019-06-02', '1', '800');
-insert into Sales (seller_id, product_id, buyer_id, sale_date, quantity, price) values ('3', '3', '3', '2019-05-13', '2', '2800');
-select * from Product;
-select * from Sales; 
-
-# Solution:
-select s.buyer_id 
-from Sales s 
-inner join Product p on s.product_id = p.product_id 
-group by 1 
-having sum(case when p.product_name = 'S8' then 1 else 0 end) > 0 
-and sum(case when p.product_name = 'iPhone' then 1 else 0 end) = 0; 
 
 
 ######## 1126. Active Businesses ######## {MEDIUM} 
@@ -301,6 +331,33 @@ where action = 'report'
 and action_date = cast(date('2019-07-05')-1 as date) 
 group by 1 
 order by 2 desc;
+
+
+######## 1205. Monthly Transactions II ####### {MEDIUM}
+
+-- Write an SQL query to find for each month and country: the number of approved transactions and their total amount, 
+-- the number of chargebacks, and their total amount.
+-- In your query, given the month and country, ignore rows with all zeros.
+
+# Schema: 
+drop table if exists Transactions; 
+drop table if exists Chargebacks; 
+create table if not exists Transactions (id int, country varchar(4), state enum('approved', 'declined'), amount int, trans_date date);
+create table if not exists Chargebacks (trans_id int, trans_date date);
+insert into Transactions (id, country, state, amount, trans_date) values ('101', 'US', 'approved', '1000', '2019-05-18');
+insert into Transactions (id, country, state, amount, trans_date) values ('102', 'US', 'declined', '2000', '2019-05-19');
+insert into Transactions (id, country, state, amount, trans_date) values ('103', 'US', 'approved', '3000', '2019-06-10');
+insert into Transactions (id, country, state, amount, trans_date) values ('104', 'US', 'declined', '4000', '2019-06-13');
+insert into Transactions (id, country, state, amount, trans_date) values ('105', 'US', 'approved', '5000', '2019-06-15');
+insert into Chargebacks (trans_id, trans_date) values ('102', '2019-05-29');
+insert into Chargebacks (trans_id, trans_date) values ('101', '2019-06-30');
+insert into Chargebacks (trans_id, trans_date) values ('105', '2019-09-18');
+select * from Transactions;
+select * from Chargebacks; 
+
+# Solution: 
+
+
 
 
 ######## 1164. Product Price at a Given Date ######## {MEDIUM}
@@ -427,10 +484,6 @@ FROM
 (SELECT log_id, ROW_NUMBER() OVER(ORDER BY log_id) as num
 FROM Logs) a
 GROUP BY log_id - num;
-
-SELECT log_id, ROW_NUMBER() OVER(ORDER BY log_id) as num
-FROM Logs;
-
 
 
 ######## 1511. Customer Order Frequency ######## [EASY]
