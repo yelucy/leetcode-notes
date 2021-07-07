@@ -43,6 +43,10 @@ group by 1,2
 order by 1,2; 
 
 
+select * from Activity a inner join Activity b on a.event_date >= b.event_date 
+and a.player_id = b.player_id; 
+
+
 ######## 577. Employee Bonus ######## [EASY]
 
 -- Select all employee's name and bonus whose bonus is < 1000. 
@@ -87,6 +91,46 @@ from orders
 group by 1 
 order by 2 desc) z 
 where z.orders=z.max_orders;
+
+######## 602. Friend Requests II: Who Has the Most Friends ######## {MEDIUM}
+
+-- Write a query to find the the people who has most friends and the most friends number under the following rules:
+	-- It is guaranteed there is only 1 people having the most friends.
+	-- The friend request could only been accepted once, 
+		-- which mean there is no multiple records with the same requester_id and accepter_id value.
+
+-- +--------------+-------------+------------+
+-- | requester_id | accepter_id | accept_date|
+-- |--------------|-------------|------------|
+-- | 1            | 2           | 2016_06-03 |
+-- | 1            | 3           | 2016-06-08 |
+-- | 2            | 3           | 2016-06-08 |
+-- | 3            | 4           | 2016-06-09 |
+-- +--------------+-------------+------------+
+-- This table holds the data of friend acceptance, while requester_id and accepter_id both are the id of a person.
+
+# Schema:
+Create table If Not Exists request_accepted ( requester_id INT NOT NULL, accepter_id INT NULL, accept_date DATE NULL);
+Truncate table request_accepted;
+insert into request_accepted (requester_id, accepter_id, accept_date) values ('1', '2', '2016/06/03');
+insert into request_accepted (requester_id, accepter_id, accept_date) values ('1', '3', '2016/06/08');
+insert into request_accepted (requester_id, accepter_id, accept_date) values ('2', '3', '2016/06/08');
+insert into request_accepted (requester_id, accepter_id, accept_date) values ('3', '4', '2016/06/09');
+select * from request_accepted;
+
+# Solution:
+select id, sum(cnt) as num 
+from 
+(select requester_id as id, count(*) as cnt 
+from request_accepted 
+group by requester_id 
+union all
+select accepter_id as id, count(*) as cnt 
+from request_accepted
+group by accepter_id) as z 
+group by id 
+order by num desc 
+limit 1;
 
 
 ######## 607. Sales Person ######## [EASY]
@@ -265,7 +309,7 @@ order by 1;
 
 ######## 1126. Active Businesses ######## {MEDIUM} 
 
-Write an SQL query to find all active businesses.
+-- Write an SQL query to find all active businesses.
 
 -- An active business is a business that has 
 -- more than one event type with occurences greater than the average occurences of that event type among all businesses.
