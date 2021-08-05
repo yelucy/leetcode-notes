@@ -1,4 +1,4 @@
-######## Not LC, Search SQL question ######## 
+######## Not LC, Search SQL question 1 ######## 
 
 ### Table 1: searches. 
 ### columns:
@@ -41,7 +41,8 @@ create table if not exists search_results (date varchar(255), search_id int, res
 insert into searches (date, search_id, user_id, age_group, search_query) values ('2020-01-01', 101, 9991, 'U30', 'michael jackson');
 insert into searches (date, search_id, user_id, age_group, search_query) values ('2020-01-01', 102, 9991, 'U30', 'menlo park');
 insert into searches (date, search_id, user_id, age_group, search_query) values ('2020-01-01', 103, 5555, '30-50', 'john');
-insert into searches (date, search_id, user_id, age_group, search_query) values ('2020-01-01', 104, 1234, '50+', 'funny dogs');
+insert into searches (date, search_id, user_id, age_group, search_query) values ('2020-01-15', 104, 8792, '30-50', 'john');
+insert into searches (date, search_id, user_id, age_group, search_query) values ('2020-01-01', 105, 1234, '50+', 'funny dogs');
 insert into search_results (date, search_id, result_id, result_type, clicked) values ('2020-01-01', 101, 1001, 'page', 'TRUE');
 insert into search_results (date, search_id, result_id, result_type, clicked) values ('2020-01-01', 101, 1002, 'event', 'FALSE');
 insert into search_results (date, search_id, result_id, result_type, clicked) values ('2020-01-01', 101, 1003, 'event', 'FALSE');
@@ -51,16 +52,55 @@ select * from search_results;
 
 ### Q1: by each age group, how many unique users searched for "john" in the last 7 days?
 
-
-
+select age_group, count(distinct user_id) as unique_users 
+from searches 
+where search_query = 'john' and cast(date as date) >= date_add('2020-01-06', interval -7 day) and cast(date as date) < '2020-01-06' 
+group by age_group;
 
 
 ### Q2: what are the top 10 search terms that are most likely to return at least one result about an Event?
 
+select search_query, sum(case when result_type = 'event' then 1 else 0 end)/count(distinct search_id) as prob 
+from (
+SELECT distinct result_type, a.search_id, search_query  
+FROM search_results AS a 
+LEFT JOIN searches AS b
+ON a.search_id = b.search_id) as c 
+group by search_query 
+order by prob desc 
+limit 10; 
 
 
 
+######## Not LC, Search SQL question 2 ######## 
 
+-- Table:
+-- searches
+
+-- Sample Rows:
+-- date         | search_id |  user_id  | age_group | search_query
+-- --------------------------------------------------------------------
+-- '2020-01-01' |    101    |   9991    |  '<30'    |  'justin bieber'
+-- '2020-01-01' |    102    |   9991    |  '<30'    |  'menlo park'  
+-- '2020-01-01' |    103    |   5555    |  '30-50'  |  'john'
+-- '2020-01-01' |    104    |   1234    |  '50+'    |  'funny cats'
+
+-- Table:
+-- search_results 
+
+-- Sample Rows:
+-- date         | search_id | result_id | result_type | clicked
+-- --------------------------------------------------------------------
+-- '2020-01-01' |    101    |    1001   |   'page'    |  TRUE
+-- '2020-01-01' |    101    |    1002   |   'event'   |  FALSE
+-- '2020-01-01' |    101    |    1003   |   'event'   |  FALSE
+-- '2020-01-01' |    101    |    1004   |   'group'   |  FALSE
+
+
+### Q1. Over the last 7 days, how many users made more than 10 searches?
+
+
+### Q2. What % of searchers today (users that searched today) have clicked on a 'group' result?
 
 
 
@@ -265,6 +305,30 @@ dense_rank() over (partition by e.DepartmentId order by e.Salary desc) as rnk
 from Employee e join Department d on e.DepartmentId = d.Id 
 ) z 
 where rnk <= 3; 
+
+
+######## 550. Game Play Analysis IV ######## {MEDIUM}
+
+-- Write an SQL query that reports the fraction of players that logged in again on the day after the day they first logged in, 
+-- rounded to 2 decimal places. In other words, 
+-- you need to count the number of players that logged in for at least two consecutive days 
+-- starting from their first login date, then divide that number by the total number of players.
+
+# Schema: 
+drop table if exists Activity; 
+Create table If Not Exists Activity (player_id int, device_id int, event_date date, games_played int);
+Truncate table Activity;
+insert into Activity (player_id, device_id, event_date, games_played) values ('1', '2', '2016-03-01', '5');
+insert into Activity (player_id, device_id, event_date, games_played) values ('1', '2', '2016-03-02', '6');
+insert into Activity (player_id, device_id, event_date, games_played) values ('2', '3', '2017-06-25', '1');
+insert into Activity (player_id, device_id, event_date, games_played) values ('3', '1', '2016-03-02', '0');
+insert into Activity (player_id, device_id, event_date, games_played) values ('3', '4', '2018-07-03', '5');
+select * from Activity;
+
+select round(count(t2.player_id)/count(t1.player_id),2) as fraction 
+from 
+(select player_id, min(event_date) as first_login from Activity group by player_id) t1 left join Activity t2 
+on t1.player_id = t2.player_id and t1.first_login = t2.event_date -1;
 
 
 ######## 597. Friend Requests I: Overall Acceptance ######## [EASY]
