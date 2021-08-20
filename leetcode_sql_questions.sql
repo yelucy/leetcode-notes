@@ -377,22 +377,54 @@ group by 1
 order by 2 desc;
 
 
-######## 1205. Monthly Transactions II ####### {MEDIUM}
 
--- Write an SQL query to find for each month and country: the number of approved transactions and their total amount, 
--- the number of chargebacks, and their total amount.
--- In your query, given the month and country, ignore rows with all zeros.
+######## 1205. Monthly Transactions II ######## {MEDIUM} 
+-- Write an SQL query to find for each month and country: 
+-- the number of approved transactions and their total amount, the number of chargebacks, and their total amount.
 
-# Schema: 
-drop table if exists Transactions; 
+-- Note: In your query, given the month and country, ignore rows with all zeros.
+
+-- Transactions table:
+-- +-----+---------+----------+--------+------------+
+-- | id  | country | state    | amount | trans_date |
+-- +-----+---------+----------+--------+------------+
+-- | 101 | US      | approved | 1000   | 2019-05-18 |
+-- | 102 | US      | declined | 2000   | 2019-05-19 |
+-- | 103 | US      | approved | 3000   | 2019-06-10 |
+-- | 104 | US      | declined | 4000   | 2019-06-13 |
+-- | 105 | US      | approved | 5000   | 2019-06-15 |
+-- +-----+---------+----------+--------+------------+
+
+-- Chargebacks table:
+-- +----------+------------+
+-- | trans_id | trans_date |
+-- +----------+------------+
+-- | 102      | 2019-05-29 |
+-- | 101      | 2019-06-30 |
+-- | 105      | 2019-09-18 |
+-- +----------+------------+
+
+-- Result table:
+-- +---------+---------+----------------+-----------------+------------------+-------------------+
+-- | month   | country | approved_count | approved_amount | chargeback_count | chargeback_amount |
+-- +---------+---------+----------------+-----------------+------------------+-------------------+
+-- | 2019-05 | US      | 1              | 1000            | 1                | 2000              |
+-- | 2019-06 | US      | 2              | 8000            | 1                | 1000              |
+-- | 2019-09 | US      | 0              | 0               | 1                | 5000              |
+-- +---------+---------+----------------+-----------------+------------------+-------------------+
+
+# Schema:
+drop table if exists Transactions;
 drop table if exists Chargebacks; 
 create table if not exists Transactions (id int, country varchar(4), state enum('approved', 'declined'), amount int, trans_date date);
 create table if not exists Chargebacks (trans_id int, trans_date date);
+Truncate table Transactions;
 insert into Transactions (id, country, state, amount, trans_date) values ('101', 'US', 'approved', '1000', '2019-05-18');
 insert into Transactions (id, country, state, amount, trans_date) values ('102', 'US', 'declined', '2000', '2019-05-19');
 insert into Transactions (id, country, state, amount, trans_date) values ('103', 'US', 'approved', '3000', '2019-06-10');
 insert into Transactions (id, country, state, amount, trans_date) values ('104', 'US', 'declined', '4000', '2019-06-13');
 insert into Transactions (id, country, state, amount, trans_date) values ('105', 'US', 'approved', '5000', '2019-06-15');
+Truncate table Chargebacks;
 insert into Chargebacks (trans_id, trans_date) values ('102', '2019-05-29');
 insert into Chargebacks (trans_id, trans_date) values ('101', '2019-06-30');
 insert into Chargebacks (trans_id, trans_date) values ('105', '2019-09-18');
@@ -400,8 +432,21 @@ select * from Transactions;
 select * from Chargebacks; 
 
 # Solution: 
-
-
+select month, country, sum(case when state = 'approved' then 1 else 0 end) as approved_count,
+sum(case when state = 'approved' then amount else 0 end) as approved_amount, 
+sum(case when state = 'chargeback' then 1 else 0 end) as chargeback_count, 
+sum(case when state = 'chargeback' then amount else 0 end) as chargeback_amount 
+from 
+(
+    select left(c.trans_date, 7) as month, country, 'chargeback' as state, amount 
+    from Chargebacks c 
+    join Transactions t on c.trans_id = t.id 
+    union all 
+    select left(t.trans_date, 7) as month, country, state, amount 
+    from Transactions t 
+    where state = 'approved' 
+) s 
+group by month, country;
 
 
 ######## 1164. Product Price at a Given Date ######## {MEDIUM}
@@ -427,6 +472,7 @@ from Products
 where change_date <= '2019-08-16') as b 
 on a.product_id = b.product_id and b.xrank = 1 
 order by 2 desc; 
+
 
 
 ######## 1212. Team Scores in Football Tournament ######## {MEDIUM} 
@@ -568,10 +614,6 @@ join product p on o.product_id = p.product_id
 group by 1,2
 having sum(if(order_date between '2020-06-01' and '2020-06-30', quantity, 0)*price) >= 100 
 and sum(if(order_date between '2020-07-01' and '2020-07-31', quantity, 0)*price) >= 100; 
-
-
-
-
 
 
 
