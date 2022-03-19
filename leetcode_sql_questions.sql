@@ -307,6 +307,48 @@ where xrank = 1
 order by 1; 
 
 
+
+######## 1107. New Users Daily Count ######## {MEDIUM}
+
+# Schema: 
+Create table If Not Exists Traffic (user_id int, activity ENUM('login', 'logout', 'jobs', 'groups', 'homepage'), activity_date date);
+Truncate table Traffic;
+insert into Traffic (user_id, activity, activity_date) values ('1', 'login', '2019-05-01');
+insert into Traffic (user_id, activity, activity_date) values ('1', 'homepage', '2019-05-01');
+insert into Traffic (user_id, activity, activity_date) values ('1', 'logout', '2019-05-01');
+insert into Traffic (user_id, activity, activity_date) values ('2', 'login', '2019-06-21');
+insert into Traffic (user_id, activity, activity_date) values ('2', 'logout', '2019-06-21');
+insert into Traffic (user_id, activity, activity_date) values ('3', 'login', '2019-01-01');
+insert into Traffic (user_id, activity, activity_date) values ('3', 'jobs', '2019-01-01');
+insert into Traffic (user_id, activity, activity_date) values ('3', 'logout', '2019-01-01');
+insert into Traffic (user_id, activity, activity_date) values ('4', 'login', '2019-06-21');
+insert into Traffic (user_id, activity, activity_date) values ('4', 'groups', '2019-06-21');
+insert into Traffic (user_id, activity, activity_date) values ('4', 'logout', '2019-06-21');
+insert into Traffic (user_id, activity, activity_date) values ('5', 'login', '2019-03-01');
+insert into Traffic (user_id, activity, activity_date) values ('5', 'logout', '2019-03-01');
+insert into Traffic (user_id, activity, activity_date) values ('5', 'login', '2019-06-21');
+insert into Traffic (user_id, activity, activity_date) values ('5', 'logout', '2019-06-21');
+select * from Traffic; 
+
+
+WITH first_log_user AS (
+    select user_id, min(activity_date) as login_date 
+    from Traffic 
+    where activity = 'login' 
+    group by 1 
+    )
+select login_date, count(distinct user_id) as user_count 
+from first_log_user 
+where datediff('2019-06-30', login_date) <= 90 
+group by login_date 
+order by login_date ;
+
+
+
+
+
+
+
 ######## 1126. Active Businesses ######## {MEDIUM} 
 
 -- Write an SQL query to find all active businesses.
@@ -375,6 +417,53 @@ where action = 'report'
 and action_date = cast(date('2019-07-05')-1 as date) 
 group by 1 
 order by 2 desc;
+
+######## 1149. Article Views II ######## {MEDIUM} 
+
+# Schema: 
+drop table if exists Views;
+Create table If Not Exists Views (article_id int, author_id int, viewer_id int, view_date date);
+Truncate table Views;
+insert into Views (article_id, author_id, viewer_id, view_date) values ('1', '3', '5', '2019-08-01');
+insert into Views (article_id, author_id, viewer_id, view_date) values ('3', '4', '5', '2019-08-01');
+insert into Views (article_id, author_id, viewer_id, view_date) values ('1', '3', '6', '2019-08-02');
+insert into Views (article_id, author_id, viewer_id, view_date) values ('2', '7', '7', '2019-08-01');
+insert into Views (article_id, author_id, viewer_id, view_date) values ('2', '7', '6', '2019-08-02');
+insert into Views (article_id, author_id, viewer_id, view_date) values ('4', '7', '1', '2019-07-22');
+insert into Views (article_id, author_id, viewer_id, view_date) values ('3', '4', '4', '2019-07-21');
+insert into Views (article_id, author_id, viewer_id, view_date) values ('3', '4', '4', '2019-07-21');
+select * from Views; 
+
+select distinct viewer_id as id 
+from(
+    select view_date, viewer_id, count(distinct article_id) as articles 
+    from Views
+    ) v 
+    where v.articles > 1 
+order by id;
+
+
+select view_date, viewer_id, count(distinct article_id) as articles 
+    from Views
+    group by 1,2;
+    
+select * 
+from Views v1 
+join Views v2 
+on v1.viewer_id = v2.viewer_id 
+and v1.view_date = v2.view_date 
+and  v1.article_id != v2.article_id 
+;
+
+
+select distinct v1.viewer_id as id  
+from Views v1 
+join Views v2 
+on v1.viewer_id = v2.viewer_id 
+and v1.view_date = v2.view_date 
+and v1.article_id != v2.article_id 
+order by id 
+;
 
 
 
