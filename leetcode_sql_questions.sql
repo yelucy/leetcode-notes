@@ -705,4 +705,128 @@ having sum(if(order_date between '2020-06-01' and '2020-06-30', quantity, 0)*pri
 and sum(if(order_date between '2020-07-01' and '2020-07-31', quantity, 0)*price) >= 100; 
 
 
+#### 1699. Number of Calls Between Two Persons [MEDIUM] #### 
+
+-- Write an SQL query to report the number of calls and the total call duration 
+-- between each pair of distinct persons (person1, person2) where person1 < person2.
+
+-- Return the result table in any order.
+
+-- The query result format is in the following example.
+
+-- +-------------+---------+
+-- | Column Name | Type    |
+-- +-------------+---------+
+-- | from_id     | int     |
+-- | to_id       | int     |
+-- | duration    | int     |
+-- +-------------+---------+
+-- This table does not have a primary key, it may contain duplicates.
+-- This table contains the duration of a phone call between from_id and to_id.
+-- from_id != to_id
+
+
+-- Input: 
+-- Calls table:
+-- +---------+-------+----------+
+-- | from_id | to_id | duration |
+-- +---------+-------+----------+
+-- | 1       | 2     | 59       |
+-- | 2       | 1     | 11       |
+-- | 1       | 3     | 20       |
+-- | 3       | 4     | 100      |
+-- | 3       | 4     | 200      |
+-- | 3       | 4     | 200      |
+-- | 4       | 3     | 499      |
+-- +---------+-------+----------+
+-- Output: 
+-- +---------+---------+------------+----------------+
+-- | person1 | person2 | call_count | total_duration |
+-- +---------+---------+------------+----------------+
+-- | 1       | 2       | 2          | 70             |
+-- | 1       | 3       | 1          | 20             |
+-- | 3       | 4       | 4          | 999            |
+-- +---------+---------+------------+----------------+
+-- Explanation: 
+-- Users 1 and 2 had 2 calls and the total duration is 70 (59 + 11).
+-- Users 1 and 3 had 1 call and the total duration is 20.
+-- Users 3 and 4 had 4 calls and the total duration is 999 (100 + 200 + 200 + 499).
+
+# Schema: 
+Create table If Not Exists Calls (from_id int, to_id int, duration int); 
+Truncate table Calls;
+insert into Calls (from_id, to_id, duration) values ('1', '2', '59');
+insert into Calls (from_id, to_id, duration) values ('2', '1', '11');
+insert into Calls (from_id, to_id, duration) values ('1', '3', '20');
+insert into Calls (from_id, to_id, duration) values ('3', '4', '100');
+insert into Calls (from_id, to_id, duration) values ('3', '4', '200');
+insert into Calls (from_id, to_id, duration) values ('3', '4', '200');
+insert into Calls (from_id, to_id, duration) values ('4', '3', '499');
+select * from Calls; 
+
+SELECT to_id AS person1, from_id AS person2, duration
+    FROM Calls
+    WHERE from_id > to_id 
+    UNION ALL
+    SELECT from_id AS person1, to_id AS person2, duration
+    FROM Calls
+    WHERE from_id < to_id;
+
+
+# Solution 1: 
+WITH CTE AS (
+    SELECT to_id AS person1, from_id AS person2, duration
+    FROM Calls
+    WHERE from_id > to_id 
+    UNION ALL
+    SELECT from_id AS person1, to_id AS person2, duration
+    FROM Calls
+    WHERE from_id < to_id)
+
+SELECT person1, person2, COUNT(person1) AS call_count , SUM(duration) AS total_duration 
+FROM CTE
+GROUP BY person1, person2;
+
+
+# Solution 2: 
+SELECT LEAST(from_id, to_id) as person1, 
+GREATEST(from_id, to_id) as person2, 
+count(*) as call_count, 
+sum(duration) as total_duration 
+FROM Calls 
+GROUP BY person1, person2;
+
+
+
+
+
+
+
+
+
+Create table If Not Exists users (user_id int, create_date date); 
+Truncate table users;
+insert into users (user_id, create_date) values (101, '2021-01-04');
+insert into users (user_id, create_date) values (102, '2021-01-25');
+insert into users (user_id, create_date) values (103, '2021-01-14');
+insert into users (user_id, create_date) values (104, '2021-01-03');
+select * from users; 
+
+Create table If Not Exists engagement (user_id int, event_date date); 
+Truncate table engagement;
+insert into engagement (user_id, event_date) values (101, '2021-02-04');
+insert into engagement (user_id, event_date) values (102, '2021-01-25');
+insert into engagement (user_id, event_date) values (103, '2021-02-14');
+insert into engagement (user_id, event_date) values (101, '2021-01-03');
+select * from engagement; 
+
+
+SELECT COUNT(DISTINCT b.user_id_feb)/COUNT(DISTINCT a.user_id)*100 as percentage_active 
+FROM users a 
+LEFT JOIN (SELECT distinct user_id as user_id_feb 
+            FROM engagement 
+            WHERE LEFT(event_date, 7) = '2021-02') b 
+ON a.user_id = b.user_id_feb 
+WHERE LEFT(a.create_date, 7) = '2021-01';
+
 
